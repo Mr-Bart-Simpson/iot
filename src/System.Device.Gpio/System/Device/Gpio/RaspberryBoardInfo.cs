@@ -147,27 +147,57 @@ namespace System.Device.Gpio
         /// See http://www.raspberrypi-spy.co.uk/2012/09/checking-your-raspberry-pi-board-version/ for information.
         /// </summary>
         /// <returns></returns>
-        private Model GetBoardModel() => (Firmware & 0xFFFF) switch
+        private Model GetBoardModel() => (Firmware & 0x800000) switch
+        {
+            0x800000 => GetBoardModelForNewStyleRevisionCodes(),
+            _ => GetBoardModelForOldStyleRevisionCodes(),
+        };
+
+        /// <summary>
+        /// Get board model for old-style revision codes
+        /// See https://www.raspberrypi.com/documentation/computers/raspberry-pi.html#old-style-revision-codes for details
+        /// </summary>
+        /// <returns></returns>
+        private Model GetBoardModelForOldStyleRevisionCodes() => (Firmware & 0xFFFF) switch
         {
             0x2 or 0x3 => Model.RaspberryPiBRev1,
             0x4 or 0x5 or 0x6 or 0xd or 0xe or 0xf => Model.RaspberryPiBRev2,
             0x7 or 0x8 or 0x9 => Model.RaspberryPiA,
-            0x10 or 0x13 or 0x32 => Model.RaspberryPiBPlus,
-            0x11 or 0x14 or 0x61 => Model.RaspberryPiComputeModule,
-            0x12 or 0x15 or 0x21 => Model.RaspberryPiAPlus,
-            0x1040 or 0x1041 or 0x2042 => Model.RaspberryPi2B,
-            0x0092 or 0x0093 => Model.RaspberryPiZero,
-            0x00C1 => Model.RaspberryPiZeroW,
-            0x2120 => Model.RaspberryPiZero2W,
-            0x2082 or 0x2083 => Model.RaspberryPi3B,
-            0x20D3 => Model.RaspberryPi3BPlus,
-            0x20E0 => Model.RaspberryPi3APlus,
-            0x20A0 or 0x2100 => Model.RaspberryPiComputeModule3,
-            0x3111 or 0x3112 or 0x3114 => Model.RaspberryPi4,
-            0x3140 => Model.RaspberryPiComputeModule4,
-            0x3130 => Model.RaspberryPi400,
+            0x10 or 0x13 => Model.RaspberryPiBPlus,
+            0x11 or 0x14 => Model.RaspberryPiComputeModule,
+            0x12 or 0x15 => Model.RaspberryPiAPlus,
             _ => Model.Unknown,
         };
+
+        /// <summary>
+        /// Get board model for new-style revision codes
+        /// See https://www.raspberrypi.com/documentation/computers/raspberry-pi.html#new-style-revision-codes for details
+        /// </summary>
+        /// <returns></returns>
+        private Model GetBoardModelForNewStyleRevisionCodes()
+            => ((Firmware & 0xFFF0) >> 4) switch // Shifting 4 bits to the right eases the use of the official documentation
+            {
+                0x00 => Model.RaspberryPiA,
+                0x01 => Model.RaspberryPiBPlus,
+                0x02 => Model.RaspberryPiAPlus,
+                0x03 => Model.RaspberryPiBPlus,
+                0x04 => Model.RaspberryPi2B,
+                0x05 => Model.Unknown, // Alpha(early prototype)
+                0x06 => Model.RaspberryPiComputeModule,
+                0x08 => Model.RaspberryPi3B,
+                0x09 => Model.RaspberryPiZero,
+                0x0a => Model.RaspberryPiComputeModule3,
+                0x0c => Model.RaspberryPiZeroW,
+                0x0d => Model.RaspberryPi3BPlus,
+                0x0e => Model.RaspberryPi3APlus,
+                0x0f => Model.Unknown, // Internal use only
+                0x10 => Model.RaspberryPiComputeModule3, // CM3+ currently not represented with the Model enum
+                0x11 => Model.RaspberryPi4,
+                0x12 => Model.RaspberryPiZero2W,
+                0x13 => Model.RaspberryPi400,
+                0x14 => Model.RaspberryPiComputeModule4,
+                _ => Model.Unknown,
+            };
 
         /// <summary>
         /// Gets the processor name.
